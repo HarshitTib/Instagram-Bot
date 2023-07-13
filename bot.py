@@ -1,0 +1,175 @@
+import pyrebase
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import db
+import openai
+from PIL import Image, ImageDraw, ImageFont
+import textwrap
+from instagrapi import Client
+from pathlib import Path
+import config
+import re
+
+#OpenAI API Key
+openai.api_key = config.api_key
+
+
+
+#Giving the access rights to update the database
+cred = credentials.Certificate('instagramFirebase.json')
+firebase_admin.initialize_app(cred)
+
+#Firebase configuration
+firebaseConfig = {
+  "apiKey": "AIzaSyDkL-a-xpid_CyZhjYcRfI_1XM3f8bSGjY",
+  "authDomain": "instagram-bo.firebaseapp.com",
+  "databaseURL": "https://instagram-bo-default-rtdb.firebaseio.com/",
+  "projectId": "instagram-bo",
+  "storageBucket": "instagram-bo.appspot.com",
+  "messagingSenderId": "258408664102",
+  "appId": "1:258408664102:web:67bc4621dd9b5972992ae7",
+  "measurementId": "G-N2YELNELVH"
+} 
+
+#Firebase initialization
+firebase = pyrebase.initialize_app(firebaseConfig)
+db = firebase.database() #storing the location of the required database
+
+
+#In order to replace the special character
+def replaceSpecialChars(string):
+    # Define the pattern to match special characters
+    pattern = r'[^\w\s-]'
+
+    # Replace special characters with underscores
+    replaced_string = re.sub(pattern, '_', string)
+
+    return replaced_string
+
+def generate_quote():
+    
+    #ChatGpt API
+    prompt = "You are a bot that generates quotes.\nUser: Generate a quote for me along with the author."
+    response = openai.Completion.create(
+        engine="text-davinci-003",
+        prompt=prompt,
+        max_tokens=200,
+        n=1,
+        stop=None,
+        temperature=0.7
+    )
+    quoteGenerated = response.choices[0].text.strip().split('\n')[-1]
+    # quoteGenerated = "Quote - Author"
+    quoteAlongWithAuthor = quoteGenerated.split('-')
+    author = quoteAlongWithAuthor[1].strip()
+    quote = quoteAlongWithAuthor[0].split(':')
+    if(len(quote) > 1):
+        quote = quote[1].strip()
+    else:
+        quote = quote[0].strip()
+    return [author, quote]
+
+#Create Instagram Post
+def create_instagram_post(quote, author, image_path, output_path):
+    
+    author = ' - ' + author
+    # Open the image
+    image = Image.open(image_path)
+    image = image.resize((800, 800))
+
+    # Define the font sizes and styles
+    quote_font_size = 40
+    author_font_size = 30
+    font = ImageFont.truetype('./Fonts/TheHeartOfEverythingDemo.ttf', quote_font_size)
+
+    # Create a drawing object
+    draw = ImageDraw.Draw(image)
+    
+    # Wrap this text.
+    # quote_lines = textwrap.wrap(quote, width=max_quote_width)
+    wrapper = textwrap.TextWrapper(width=30)
+    quote_lines = wrapper.wrap(text=quote)
+    
+    # Calculate the total height required for the quote text
+    line_spacing = 10 
+    quote_text_bbox = draw.textbbox((0, 0), quote, font=font)
+    quote_text_width = quote_text_bbox[2] - quote_text_bbox[0]
+    quote_text_height = quote_text_bbox[3] - quote_text_bbox[1]
+    line_height = quote_text_height + line_spacing
+    quote_height = len(quote_lines) * line_height
+    
+    # Calculate the starting y-coordinate for the quote text
+    quote_start_y = (image.height - quote_height) // 2
+
+    # Draw the quote text on the image
+    for line in quote_lines:
+        line_bbox = draw.textbbox((0, 0), line, font=font)
+        line_width = line_bbox[2] - line_bbox[0]
+        line_height = line_bbox[3] - line_bbox[1]
+        line_x = (image.width - line_width + 20) // 2  # Centered horizontally
+        draw.text((line_x, quote_start_y), line, fill='black', font=font, align='center')
+        quote_start_y += line_height + line_spacing
+
+    # Define the author font size and style
+    author_font = ImageFont.truetype('./Fonts/Roboto/Roboto-Light.ttf', author_font_size)  
+
+    # Calculate the position to place the author text
+    author_bbox = draw.textbbox((0, 0), author, font=author_font)
+    author_text_width = author_bbox[2] - author_bbox[0]
+    author_text_height = author_bbox[3] - author_bbox[1]
+    author_x = (image.width - author_text_width) // 2  # Centered horizontally
+    author_y = image.height - 300  # Positioned below the last line of the quote
+
+    # Draw the author text on the image
+    draw.text((author_x, author_y), author, fill='black', font=author_font, align='center')
+    # Save the modified image
+    image.save(output_path)
+    
+    image.show()
+    #To upload photo in instagram
+    insta = Client()
+    insta.login(config.username, config.password)
+    
+    imagePath = Path(output_path)
+
+    media = insta.photo_upload(
+        path = imagePath,
+        caption = ""
+    )
+
+def pushDataInTheFirebase():
+    author = ""
+    authorWithoutSpecialCharacter = ""
+    quote = "" 
+    count = 0  
+    flag = 1
+    while(flag == 1 and count < 5):
+        flag = 0
+        count = count + 1
+        quoteAndAuthor = generate_quote()
+        author = quoteAndAuthor[0] if quoteAndAuthor[0] else "Anonymous"
+        authorWithoutSpecialCharacter = replaceSpecialChars(author)
+        quote = quoteAndAuthor[1]
+        quotesFromFirebaseRef = db.child("Quotes").child(author)
+        quotesFromFirebaseRefData = quotesFromFirebaseRef.get()
+        if(quotesFromFirebaseRefData.val()!=None and 
+           len(quotesFromFirebaseRefData.val()) > 0):
+            for ele in quotesFromFirebaseRefData.each():
+                if(ele.val() == quote):
+                    flag = 1
+                    break
+    if(count == 5):
+        print("Try again afterwards")
+        return
+    else:            
+        db.child("Quotes").child(authorWithoutSpecialCharacter).push(quote) 
+        numberOfImages = len(db.child("Quotes").child(author).get().val()) 
+        modifiedImage = authorWithoutSpecialCharacter + str(numberOfImages)
+        image_path = "./TemplatesImage/Input/Image2.jpg" 
+        output_path = f'./TemplatesImage/Output/{modifiedImage}.jpg'    
+        create_instagram_post(quote, author, image_path, output_path)
+        print("Done succeessfully")   
+        
+        
+pushDataInTheFirebase()
+
