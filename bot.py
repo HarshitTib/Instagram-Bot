@@ -9,11 +9,11 @@ from instagrapi import Client
 from pathlib import Path
 import config
 import re
+import difflib
+import time
 
 #OpenAI API Key
 openai.api_key = config.api_key
-
-
 
 #Giving the access rights to update the database
 cred = credentials.Certificate('instagramFirebase.json')
@@ -49,7 +49,7 @@ def replaceSpecialChars(string):
 def generate_quote():
     
     #ChatGpt API
-    prompt = "You are a bot that generates quotes.\nUser: Generate a quote for me along with the author."
+    prompt = "You are a bot that generates quotes.\nUser: Generate a random quote for me along with the author."
     response = openai.Completion.create(
         engine="text-davinci-003",
         prompt=prompt,
@@ -118,14 +118,14 @@ def create_instagram_post(quote, author, image_path, output_path):
     author_text_width = author_bbox[2] - author_bbox[0]
     author_text_height = author_bbox[3] - author_bbox[1]
     author_x = (image.width - author_text_width) // 2  # Centered horizontally
-    author_y = image.height - 300  # Positioned below the last line of the quote
+    author_y = image.height - 280  # Positioned below the last line of the quote
 
     # Draw the author text on the image
     draw.text((author_x, author_y), author, fill='black', font=author_font, align='center')
     # Save the modified image
     image.save(output_path)
-    
     image.show()
+    
     #To upload photo in instagram
     insta = Client()
     insta.login(config.username, config.password)
@@ -145,31 +145,33 @@ def pushDataInTheFirebase():
     flag = 1
     while(flag == 1 and count < 5):
         flag = 0
-        count = count + 1
         quoteAndAuthor = generate_quote()
         author = quoteAndAuthor[0] if quoteAndAuthor[0] else "Anonymous"
         authorWithoutSpecialCharacter = replaceSpecialChars(author)
         quote = quoteAndAuthor[1]
-        quotesFromFirebaseRef = db.child("Quotes").child(author)
+        quotesFromFirebaseRef = db.child("Quotes").child(authorWithoutSpecialCharacter)
         quotesFromFirebaseRefData = quotesFromFirebaseRef.get()
         if(quotesFromFirebaseRefData.val()!=None and 
            len(quotesFromFirebaseRefData.val()) > 0):
             for ele in quotesFromFirebaseRefData.each():
-                if(ele.val() == quote):
+                similarity_ratio = difflib.SequenceMatcher(None, ele.val(), quote).ratio()
+                if(similarity_ratio > 0.7):
+                    print("Quotes" , quote, authorWithoutSpecialCharacter)
+                    count = count + 1
                     flag = 1
                     break
-    if(count == 5):
-        print("Try again afterwards")
-        return
-    else:            
+        if(count%2 == 0):
+            print("Try again after 40 seconds")
+            time.sleep(40)
+        # return
+    if(flag == 0):            
         db.child("Quotes").child(authorWithoutSpecialCharacter).push(quote) 
-        numberOfImages = len(db.child("Quotes").child(author).get().val()) 
+        numberOfImages = len(db.child("Quotes").child(authorWithoutSpecialCharacter).get().val()) 
         modifiedImage = authorWithoutSpecialCharacter + str(numberOfImages)
         image_path = "./TemplatesImage/Input/Image2.jpg" 
         output_path = f'./TemplatesImage/Output/{modifiedImage}.jpg'    
         create_instagram_post(quote, author, image_path, output_path)
         print("Done succeessfully")   
-        
-        
+               
 pushDataInTheFirebase()
 
