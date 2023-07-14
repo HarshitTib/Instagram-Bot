@@ -163,11 +163,6 @@ def pushDataInTheFirebase():
             output_path = f'./TemplatesImage/Output/{modifiedImage}.jpg'    
             create_instagram_post(quote, author, image_path, output_path)
             print("Done succeessfully")
-              
-    except pyrebase.pyrebase.PyrebaseException as e:
-        print("Error: Pyrebase exception occurred:", str(e))
-    except firebase_admin.exceptions.FirebaseError as e:
-        print("Error: Firebase exception occurred:", str(e))
     except Exception as e:
         print("Error: An unexpected exception occurred:", str(e))
                
