@@ -1,20 +1,10 @@
-import pyrebase
-import firebase_admin
+import pyrebase, re, difflib, os, requests, textwrap, openai, firebase_admin
 from firebase_admin import credentials
 from firebase_admin import db
-import openai
 from PIL import Image, ImageDraw, ImageFont
-import textwrap
 from instagrapi import Client
 from pathlib import Path
 import config
-import re
-import difflib
-import time
-import os
-
-#OpenAI API Key
-openai.api_key = config.api_key
 
 
 if not os.path.isfile('instagramFirebase.json'):
@@ -54,33 +44,20 @@ def replaceSpecialChars(string):
     return replaced_string
 
 def generate_quote():
-    
-    try:
-    #ChatGpt API
-        prompt = "You are a bot that generates quotes.\nUser: Generate a random quote for me along with the author."
-        response = openai.Completion.create(
-            engine="text-davinci-003",
-            prompt=prompt,
-            max_tokens=200,
-            n=1,
-            stop=None,
-            temperature=0.7
-        )
-        quoteGenerated = response.choices[0].text.strip().split('\n')[-1]
-        # quoteGenerated = "Quote - Author"
-        quoteAlongWithAuthor = quoteGenerated.split('-')
-        author = quoteAlongWithAuthor[1].strip()
-        quote = quoteAlongWithAuthor[0].split(':')
-        if(len(quote) > 1):
-            quote = quote[1].strip()
-        else:
-            quote = quote[0].strip()
+     
+    response = requests.get("https://zenquotes.io/api/random")
+
+    # Check if the request was successful (status code 200)
+    if response.status_code == 200:
+        # Extract the quote from the response
+        data = response.json()[0]
+        quote = data["q"]
+        author = data["a"]
         return [author, quote]
-    
-    except openai.Error as e:
-        print("Error: OpenAI API exception occurred:", str(e))
-    except Exception as e:
-        print("Error: An unexpected exception occurred:", str(e))
+    else:
+        # Print an error message if the request was not successful
+        print("Error retrieving the quote. Please try again.")
+        exit()
 
 #Create Instagram Post
 def create_instagram_post(quote, author, image_path, output_path):
@@ -137,7 +114,7 @@ def create_instagram_post(quote, author, image_path, output_path):
     draw.text((author_x, author_y), author, fill='black', font=author_font, align='center')
     # Save the modified image
     image.save(output_path)
-    image.show()
+    # image.show()
     
     #To upload photo in instagram
     insta = Client()
@@ -157,12 +134,15 @@ def pushDataInTheFirebase():
         quote = "" 
         count = 0  
         flag = 1
-        while(flag == 1 and count < 5):
+        while(flag == 1):
             flag = 0
             quoteAndAuthor = generate_quote()
             author = quoteAndAuthor[0] if quoteAndAuthor[0] else "Anonymous"
             authorWithoutSpecialCharacter = replaceSpecialChars(author)
             quote = quoteAndAuthor[1]
+            if(len(quote) > 130):
+                flag = 1
+                continue
             quotesFromFirebaseRef = db.child("Quotes").child(authorWithoutSpecialCharacter)
             quotesFromFirebaseRefData = quotesFromFirebaseRef.get()
             if(quotesFromFirebaseRefData.val()!=None and 
@@ -174,9 +154,6 @@ def pushDataInTheFirebase():
                         count = count + 1
                         flag = 1
                         break
-            if(count!=0 and count%2 == 0):
-                print("Try again after 40 seconds")
-                time.sleep(40)
             # return
         if(flag == 0):            
             db.child("Quotes").child(authorWithoutSpecialCharacter).push(quote) 
