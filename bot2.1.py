@@ -5,6 +5,7 @@ from PIL import Image, ImageDraw, ImageFont
 from instagrapi import Client
 from pathlib import Path
 import config
+import time
 
 if not os.path.isfile('instagramFirebase.json'):
     print("Error: 'instagramFirebase.json' file not found.")
@@ -97,11 +98,10 @@ def create_instagram_post(quote, author, image_path, output_path):
     # Save the modified image
     image.save(output_path)
     # image.show()
-    print("Hello inside instagram")
     
     #To upload photo in instagram
     insta = Client()
-    insta.login(config.username, config.password)
+    insta.login("demo12275", "demo123")
     
     imagePath = Path(output_path)
 
@@ -109,7 +109,12 @@ def create_instagram_post(quote, author, image_path, output_path):
         path = imagePath,
         caption = ""
     )
-    print("Hello instagram at the last")
+    print(media.id)
+    while media.id is None:
+        time.sleep(1)  # Wait for 1 second
+        media = insta.photo_upload_status(media.id)
+    # The upload is completed
+    print("Instagram post uploaded successfully!")
 
 def pushDataInTheFirebase():
     try:
