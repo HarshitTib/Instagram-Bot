@@ -97,6 +97,7 @@ def create_instagram_post(quote, author, image_path, output_path):
     # Save the modified image
     image.save(output_path)
     # image.show()
+    print("Hello inside instagram")
     
     #To upload photo in instagram
     insta = Client()
@@ -108,6 +109,7 @@ def create_instagram_post(quote, author, image_path, output_path):
         path = imagePath,
         caption = ""
     )
+    print("Hello instagram at the last")
 
 def pushDataInTheFirebase():
     try:
