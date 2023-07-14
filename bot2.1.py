@@ -101,7 +101,7 @@ def create_instagram_post(quote, author, image_path, output_path):
     
     #To upload photo in instagram
     insta = Client()
-    insta.login(config.username, config.password)
+    insta.login("suwichar2023", "Suwichar@2023")
     
     imagePath = Path(output_path)
 
