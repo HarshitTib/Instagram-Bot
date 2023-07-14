@@ -1,7 +1,7 @@
 pyrebase
 regex
-requests
-firebase_admin
+requests==2.29.0
+firebase_admin==6.2.0
 Pillow
-instagrapi
+instagrapi==1.17.13
 pathlib
