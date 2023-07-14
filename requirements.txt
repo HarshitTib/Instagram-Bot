@@ -1,3 +1,4 @@
+gunicorn
 Flask
 regex
 requests==2.29.0
