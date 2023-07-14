@@ -1,6 +1,5 @@
 pyrebase==3.0.27
 regex==2021.4.4
-difflib==3.7.0
 requests==2.26.0
 textwrap==0.1.0
 openai==0.27.0
