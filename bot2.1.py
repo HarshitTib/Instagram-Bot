@@ -101,7 +101,7 @@ def create_instagram_post(quote, author, image_path, output_path):
     
     #To upload photo in instagram
     insta = Client()
-    insta.login("suwichar2023", "Suwichar@2023")
+    insta.login(config.username, config.password)
     
     imagePath = Path(output_path)
 
@@ -149,7 +149,7 @@ def pushDataInTheFirebase():
             create_instagram_post(quote, author, image_path, output_path)
             print("Done succeessfully")
     except Exception as e:
-        print("Error: An unexpected exception occurred:", str(e))
+        print("Error: An unexpected exception occurred:", type(e))
                
 pushDataInTheFirebase()
 
