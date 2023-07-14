@@ -1,4 +1,4 @@
-import pyrebase, re, difflib, os, requests, textwrap, openai, firebase_admin
+import pyrebase, re, difflib, os, requests, textwrap, firebase_admin
 from firebase_admin import credentials
 from firebase_admin import db
 from PIL import Image, ImageDraw, ImageFont
