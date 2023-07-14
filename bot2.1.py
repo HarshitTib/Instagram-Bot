@@ -134,7 +134,7 @@ def pushDataInTheFirebase():
         quote = "" 
         count = 0  
         flag = 1
-        while(flag == 1 && count < 5):
+        while(flag == 1 and count < 5):
             flag = 0
             quoteAndAuthor = generate_quote()
             author = quoteAndAuthor[0] if quoteAndAuthor[0] else "Anonymous"
