@@ -7,6 +7,9 @@ from pathlib import Path
 import config
 import time
 
+delay_minutes = 2
+delay_seconds = delay_minutes * 60
+
 if not os.path.isfile('instagramFirebase.json'):
     print("Error: 'instagramFirebase.json' file not found.")
     exit()
@@ -157,4 +160,6 @@ def pushDataInTheFirebase():
         print("Error: An unexpected exception occurred:", type(e))
                
 pushDataInTheFirebase()
+time.sleep(delay_seconds)
+
 
