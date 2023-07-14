@@ -101,7 +101,7 @@ def create_instagram_post(quote, author, image_path, output_path):
         quote_start_y += line_height + line_spacing
 
     # Define the author font size and style
-    author_font = ImageFont.truetype('./Fonts/Roboto/Roboto-Light.ttf', author_font_size)  
+    author_font = ImageFont.truetype('./Fonts/Roboto-Light.ttf', author_font_size)  
 
     # Calculate the position to place the author text
     author_bbox = draw.textbbox((0, 0), author, font=author_font)
