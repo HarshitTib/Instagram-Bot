@@ -137,7 +137,8 @@ def pushDataInTheFirebase():
                         flag = 1
                         break
             # return
-        if(flag == 0):            
+        if(flag == 0):    
+            print(quote)        
             db_ref.child("Quotes").child(authorWithoutSpecialCharacter).push(quote) 
             numberOfImages = len(db_ref.child("Quotes").child(authorWithoutSpecialCharacter).get().items()) 
             modifiedImage = authorWithoutSpecialCharacter + str(numberOfImages)
