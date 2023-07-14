@@ -7,7 +7,7 @@ from pathlib import Path
 import config
 import time
 
-delay_minutes = 10
+delay_minutes = 2
 delay_seconds = delay_minutes * 60
 
 if not os.path.isfile('instagramFirebase.json'):
