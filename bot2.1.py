@@ -1,4 +1,4 @@
-import pyrebase, re, difflib, os, requests, textwrap, firebase_admin
+import re, difflib, os, requests, textwrap, firebase_admin
 from firebase_admin import credentials
 from firebase_admin import db
 from PIL import Image, ImageDraw, ImageFont
@@ -6,41 +6,23 @@ from instagrapi import Client
 from pathlib import Path
 import config
 
-
 if not os.path.isfile('instagramFirebase.json'):
     print("Error: 'instagramFirebase.json' file not found.")
     exit()
 else:
-#Giving the access rights to update the database
+    #Giving the access rights to update the database
     cred = credentials.Certificate('instagramFirebase.json')
-    firebase_admin.initialize_app(cred)
-
-
-#Firebase configuration
-firebaseConfig = {
-  "apiKey": "AIzaSyDkL-a-xpid_CyZhjYcRfI_1XM3f8bSGjY",
-  "authDomain": "instagram-bo.firebaseapp.com",
-  "databaseURL": "https://instagram-bo-default-rtdb.firebaseio.com/",
-  "projectId": "instagram-bo",
-  "storageBucket": "instagram-bo.appspot.com",
-  "messagingSenderId": "258408664102",
-  "appId": "1:258408664102:web:67bc4621dd9b5972992ae7",
-  "measurementId": "G-N2YELNELVH"
-} 
-
-#Firebase initialization
-firebase = pyrebase.initialize_app(firebaseConfig)
-db = firebase.database() #storing the location of the required database
+    firebase_admin.initialize_app(cred, {
+    'databaseURL': 'https://instagram-bo-default-rtdb.firebaseio.com/'})
+    db_ref = db.reference('/')
 
 
 #In order to replace the special character
 def replaceSpecialChars(string):
     # Define the pattern to match special characters
     pattern = r'[^\w\s-]'
-
     # Replace special characters with underscores
     replaced_string = re.sub(pattern, '_', string)
-
     return replaced_string
 
 def generate_quote():
@@ -143,12 +125,12 @@ def pushDataInTheFirebase():
             if(len(quote) > 130):
                 flag = 1
                 continue
-            quotesFromFirebaseRef = db.child("Quotes").child(authorWithoutSpecialCharacter)
+            quotesFromFirebaseRef = db_ref.child("Quotes").child(authorWithoutSpecialCharacter)
             quotesFromFirebaseRefData = quotesFromFirebaseRef.get()
-            if(quotesFromFirebaseRefData.val()!=None and 
-            len(quotesFromFirebaseRefData.val()) > 0):
-                for ele in quotesFromFirebaseRefData.each():
-                    similarity_ratio = difflib.SequenceMatcher(None, ele.val(), quote).ratio()
+            if(quotesFromFirebaseRefData!=None and 
+            len(quotesFromFirebaseRefData.items()) > 0):
+                for key, ele in quotesFromFirebaseRefData.items():
+                    similarity_ratio = difflib.SequenceMatcher(None, ele, quote).ratio()
                     if(similarity_ratio > 0.7):
                         print("Quotes" , quote, authorWithoutSpecialCharacter)
                         count = count + 1
@@ -156,8 +138,8 @@ def pushDataInTheFirebase():
                         break
             # return
         if(flag == 0):            
-            db.child("Quotes").child(authorWithoutSpecialCharacter).push(quote) 
-            numberOfImages = len(db.child("Quotes").child(authorWithoutSpecialCharacter).get().val()) 
+            db_ref.child("Quotes").child(authorWithoutSpecialCharacter).push(quote) 
+            numberOfImages = len(db_ref.child("Quotes").child(authorWithoutSpecialCharacter).get().items()) 
             modifiedImage = authorWithoutSpecialCharacter + str(numberOfImages)
             image_path = "./TemplatesImage/Input/Image2.jpg" 
             output_path = f'./TemplatesImage/Output/{modifiedImage}.jpg'    
