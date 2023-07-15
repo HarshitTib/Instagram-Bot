@@ -164,7 +164,7 @@ def pushDataInTheFirebase():
         
 
 # Define the scheduler
-schedule.every(2).minutes.do(pushDataInTheFirebase)  # Schedule the task every 2 minutes
+schedule.every(1).hours.do(pushDataInTheFirebase)  # Schedule the task every 2 minutes
 
 # Run the scheduler in the main thread
 def run_scheduler():
