@@ -165,10 +165,9 @@ def pushDataInTheFirebase():
 @app.route('/')
 def index():
     return "Post getting posted"
-    
-    # return "Post done successfully!"
+    pushDataInTheFirebase()
+    return "Post done successfully!"
 
 if __name__ == '__main__':
-    pushDataInTheFirebase()
     app.run()
 
