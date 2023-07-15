@@ -7,6 +7,7 @@ from instagrapi import Client
 from pathlib import Path
 import config
 import time
+import waitress
 
 app = Flask(__name__)
 
@@ -167,4 +168,5 @@ def index():
     return "Post done successfully!"
 
 if __name__ == '__main__':
-    app.run()
+    from waitress import serve
+    serve(app, host="0.0.0.0", port=8080)
