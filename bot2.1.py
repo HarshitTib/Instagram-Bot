@@ -7,7 +7,8 @@ from instagrapi import Client
 from pathlib import Path
 import config
 import time
-import waitress
+import schedule
+import threading
 
 app = Flask(__name__)
 
@@ -160,13 +161,23 @@ def pushDataInTheFirebase():
             print("Done successfully")
     except Exception as e:
         print("Error: An unexpected exception occurred:", type(e))
+        
 
-pushDataInTheFirebase()
+# Define the scheduler
+schedule.every(2).minutes.do(pushDataInTheFirebase)  # Schedule the task every 2 minutes
+
+# Run the scheduler in the main thread
+def run_scheduler():
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
 
 @app.route('/')
 def index():
     return "Post getting posted"
 
 if __name__ == '__main__':
+    scheduler_thread = threading.Thread(target=run_scheduler)
+    scheduler_thread.start()
     app.run()
 
