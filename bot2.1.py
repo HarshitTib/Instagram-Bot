@@ -161,10 +161,10 @@ def pushDataInTheFirebase():
     except Exception as e:
         print("Error: An unexpected exception occurred:", type(e))
 
+pushDataInTheFirebase()
 
 @app.route('/')
 def index():
-    pushDataInTheFirebase()
     return "Post getting posted"
 
 if __name__ == '__main__':
