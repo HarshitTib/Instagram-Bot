@@ -164,7 +164,7 @@ def pushDataInTheFirebase():
 @app.route('/')
 def index():
     pushDataInTheFirebase()
-    return "Flask app is running!"
+    return "Post done successfully!"
 
 if __name__ == '__main__':
     app.run()
