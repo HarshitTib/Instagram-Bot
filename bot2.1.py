@@ -145,13 +145,11 @@ def pushDataInTheFirebase():
                 for key, ele in quotesFromFirebaseRefData.items():
                     similarity_ratio = difflib.SequenceMatcher(None, ele, quote).ratio()
                     if similarity_ratio > 0.7:
-                        print("Quotes", quote, authorWithoutSpecialCharacter)
                         count = count + 1
                         flag = 1
                         break
             # return
         if flag == 0:
-            print(quote)
             db_ref.child("Quotes").child(authorWithoutSpecialCharacter).push(quote)
             numberOfImages = len(db_ref.child("Quotes").child(authorWithoutSpecialCharacter).get().items())
             modifiedImage = authorWithoutSpecialCharacter + str(numberOfImages)
@@ -164,7 +162,7 @@ def pushDataInTheFirebase():
         
 
 # Define the scheduler
-schedule.every(1).hours.do(pushDataInTheFirebase)  # Schedule the task every 2 minutes
+schedule.every(6).hours.do(pushDataInTheFirebase)  # Schedule the task every 2 minutes
 
 # Run the scheduler in the main thread
 def run_scheduler():
