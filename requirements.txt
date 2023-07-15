@@ -8,4 +8,3 @@ Pillow
 instagrapi==1.17.13
 pathlib
 schedule
-threading
